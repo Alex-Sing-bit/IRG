@@ -20,6 +20,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
     private String barcodeMessage = "";
 
     private FaceDetector faceDetector;
+
+    private FaceDetectionActivity a = new FaceDetectionActivity();
 
     Face mainFace = null;
 
@@ -115,14 +118,16 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
     }
+
+    private int frameCount = 0;
     private void startCamera() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
 
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setTargetResolution(new Size(4800, 4800))
+                @SuppressLint("RestrictedApi") ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                        .setTargetResolution(new Size(4600, 4600))
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build();
 
@@ -131,42 +136,46 @@ public class MainActivity extends AppCompatActivity {
                         .build();
 
                 imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(MainActivity.this), image -> {
-                    @OptIn(markerClass = ExperimentalGetImage.class) Image img = image.getImage();
-                    Bitmap bitmap = translator.translateYUV(img, MainActivity.this);
-                    InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
 
-                    //Отслеживание кода если не было другого.
-                    // Исправь на кореляцию с лицом в кадре или отсутствием его
-                    /*if (barcodeMessage.isEmpty()) {
-                        barcodeDetector.process(inputImage)
-                                .addOnSuccessListener(barcodes -> barcodes.stream()
-                                        .findFirst()
-                                        .ifPresent(barcode -> {
-                                            drawBoundingBox(barcode, bitmap);
-                                            preview.setRotation(image.getImageInfo().getRotationDegrees());
-                                            image.close();
-                                            barcodeMessage = barcode.getRawValue();
-                                            Toast.makeText(MainActivity.this, barcodeMessage, Toast.LENGTH_SHORT).show();
-                                        })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
-                    }
-                    //Не видит лиц
-                    else*/ if (mainFace == null) {
-                        faceDetector.process(inputImage)
-                                .addOnSuccessListener(faces -> faces.stream()
-                                        .findFirst()
-                                        .ifPresent(face -> {
-                                            Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
-                                            //drawBoundingBox(face, bitmap);
-                                            //preview.setRotation(image.getImageInfo().getRotationDegrees());
-                                            //image.close();
-                                            mainFace = face;
-                                            //Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
-                                        })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
-                    }
 
-                    preview.setRotation(image.getImageInfo().getRotationDegrees());
-                    preview.setImageBitmap(bitmap);
-                    image.close();
+                        @OptIn(markerClass = ExperimentalGetImage.class) Image img = image.getImage();
+                        Bitmap bitmap = translator.translateYUV(img, MainActivity.this);
+                        InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
+
+
+                        //Отслеживание кода если не было другого.
+                        // Исправь на кореляцию с лицом в кадре или отсутствием его
+                        if (barcodeMessage.isEmpty()) {
+                            barcodeDetector.process(inputImage)
+                                    .addOnSuccessListener(barcodes -> barcodes.stream()
+                                            .findFirst()
+                                            .ifPresent(barcode -> {
+                                                preview.setImageBitmap(drawBoundingBox(barcode, bitmap));
+                                                preview.setRotation(image.getImageInfo().getRotationDegrees());
+                                                image.close();
+                                                barcodeMessage = barcode.getRawValue();
+                                                Toast.makeText(MainActivity.this, barcodeMessage, Toast.LENGTH_SHORT).show();
+                                            })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
+                        }
+                        //Не видит лиц, хотя пытается
+                        else if (mainFace == null && frameCount % 30 == 0) {
+                            faceDetector.process(inputImage)
+                                    .addOnSuccessListener(faces -> faces.stream()
+                                            .findFirst()
+                                            .ifPresent(face -> {
+                                                Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
+                                                //drawBoundingBox(face, bitmap);
+                                                //preview.setRotation(image.getImageInfo().getRotationDegrees());
+                                                //image.close();
+                                                mainFace = face;
+                                                //Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
+                                            })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
+                        }
+
+                        preview.setRotation(image.getImageInfo().getRotationDegrees());
+                        preview.setImageBitmap(bitmap);
+                        image.close();
+                        frameCount++;
                 });
 
                 cameraProvider.bindToLifecycle(MainActivity.this, cameraSelector, imageAnalysis);
@@ -179,15 +188,15 @@ public class MainActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor((this)));
     }
 
-    private void drawBoundingBox(Barcode barcode, Bitmap bitmap) {
-        drawBoundingBox(barcode.getBoundingBox(), bitmap);
+    public static Bitmap drawBoundingBox(Barcode barcode, Bitmap bitmap) {
+        return drawBoundingBox(barcode.getBoundingBox(), bitmap);
     }
 
-    private void drawBoundingBox(Face face, Bitmap bitmap) {
+    public static Bitmap drawBoundingBox(Face face, Bitmap bitmap) {
         face.getTrackingId();
-        drawBoundingBox(face.getBoundingBox(), bitmap);
+        return drawBoundingBox(face.getBoundingBox(), bitmap);
     }
-    private void drawBoundingBox(Rect bounds, Bitmap bitmap) {
+    private static Bitmap drawBoundingBox(Rect bounds, Bitmap bitmap) {
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setColor(Color.GREEN);
@@ -197,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
         assert bounds != null;
         canvas.drawRect(bounds, paint);
 
-        preview.setImageBitmap(bitmap);
+        return bitmap;
+        //preview.setImageBitmap(bitmap);
     }
 }
