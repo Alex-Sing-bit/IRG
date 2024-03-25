@@ -1,4 +1,4 @@
-package com.example.irg0;
+package com.example.irg0.helpers;
 
 import android.content.Context;
 import android.graphics.Bitmap;

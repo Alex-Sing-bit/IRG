@@ -20,7 +20,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
@@ -28,6 +27,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.irg0.helpers.DrawDetection;
+import com.example.irg0.helpers.Person;
+import com.example.irg0.helpers.PersonBase;
+import com.example.irg0.helpers.YUVtoRGB;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
@@ -40,6 +43,8 @@ import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
@@ -55,13 +60,16 @@ public class MainActivity extends AppCompatActivity {
 
     private FaceDetector faceDetector;
 
-    private FaceDetectionActivity a = new FaceDetectionActivity();
-
     Face mainFace = null;
+
+    private  final int UPDATE_RATE = 10;
+
+    public static PersonBase base = new PersonBase();
 
     private boolean allPermissionGranted() {
         return Arrays.stream(PERMISSION)
-                .allMatch(permission -> ContextCompat.checkSelfPermission(getBaseContext(), permission) == PackageManager.PERMISSION_GRANTED);
+                .allMatch(permission -> ContextCompat.checkSelfPermission(getBaseContext(), permission)
+                        == PackageManager.PERMISSION_GRANTED);
     }
 
     @SuppressLint("MissingInflatedId")
@@ -82,8 +90,8 @@ public class MainActivity extends AppCompatActivity {
         barcodeDetector = BarcodeScanning.getClient(bOptions);
 
         FaceDetectorOptions fOptions = new FaceDetectorOptions.Builder()
-                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
-                .enableTracking().build();
+                .enableTracking()
+                .build();
         faceDetector = FaceDetection.getClient(fOptions);
 
         preview = findViewById(R.id.preview);
@@ -96,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
                     PERMISSION,
                     PERMISSION_CODE);
         }
+
+        base.addToBase(new Person(123123, "OLEG", "Additional info Oleg"));
+        base.addToBase(new Person(124125, "SASHA", "Additional info Sasha"));
     }
 
     @Override
@@ -143,9 +154,7 @@ public class MainActivity extends AppCompatActivity {
                         InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
 
 
-                        //Отслеживание кода если не было другого.
-                        // Исправь на кореляцию с лицом в кадре или отсутствием его
-                        if (barcodeMessage.isEmpty()) {
+                        if (Objects.equals(barcodeMessage, "") && frameCount % UPDATE_RATE == 0) {
                             barcodeDetector.process(inputImage)
                                     .addOnSuccessListener(barcodes -> barcodes.stream()
                                             .findFirst()
@@ -154,28 +163,44 @@ public class MainActivity extends AppCompatActivity {
                                                 preview.setRotation(image.getImageInfo().getRotationDegrees());
                                                 image.close();
                                                 barcodeMessage = barcode.getRawValue();
-                                                Toast.makeText(MainActivity.this, barcodeMessage, Toast.LENGTH_SHORT).show();
                                             })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
+                        } else if (frameCount % UPDATE_RATE == 0) {
+                            barcodeDetector.process(inputImage)
+                                    .addOnSuccessListener(barcodes -> {
+                                        if (barcodes.isEmpty()) {
+                                            barcodeMessage = "";
+                                        }
+                                    }).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
                         }
-                        //Не видит лиц, хотя пытается
-                        else if (mainFace == null && frameCount % 30 == 0) {
+                        Toast.makeText(MainActivity.this, barcodeMessage, Toast.LENGTH_SHORT).show();
+
+                        if (frameCount % UPDATE_RATE == 0) {
                             faceDetector.process(inputImage)
-                                    .addOnSuccessListener(faces -> faces.stream()
-                                            .findFirst()
-                                            .ifPresent(face -> {
-                                                Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
-                                                //drawBoundingBox(face, bitmap);
-                                                //preview.setRotation(image.getImageInfo().getRotationDegrees());
-                                                //image.close();
-                                                mainFace = face;
-                                                //Toast.makeText(MainActivity.this, "ЛИЦО", Toast.LENGTH_SHORT).show();
-                                            })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
+                                    .addOnSuccessListener(faces -> {
+                                        if (faces.isEmpty()) {
+                                            mainFace = null;
+                                            barcodeMessage = "";
+                                        } else {
+                                            Face largestFace = faces.stream()
+                                                    .max(Comparator.comparingInt(face -> face.getBoundingBox().width() * face.getBoundingBox().height()))
+                                                    .orElse(null);
+                                            Toast.makeText(MainActivity.this, "САМОЕ КРУПНОЕ ЛИЦО", Toast.LENGTH_SHORT).show();
+                                            mainFace = largestFace;
+                                        }
+                                    }).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
+
                         }
 
-                        preview.setRotation(image.getImageInfo().getRotationDegrees());
-                        preview.setImageBitmap(bitmap);
-                        image.close();
-                        frameCount++;
+                        if (mainFace != null) {
+                            preview.setImageBitmap(DrawDetection.drawDetection(bitmap, barcodeMessage, mainFace.getBoundingBox()));
+                            preview.setRotation(image.getImageInfo().getRotationDegrees());
+                            image.close();
+                        }
+
+                    preview.setRotation(image.getImageInfo().getRotationDegrees());
+                    preview.setImageBitmap(bitmap);
+                    image.close();
+                    frameCount++;
                 });
 
                 cameraProvider.bindToLifecycle(MainActivity.this, cameraSelector, imageAnalysis);
@@ -193,20 +218,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static Bitmap drawBoundingBox(Face face, Bitmap bitmap) {
-        face.getTrackingId();
         return drawBoundingBox(face.getBoundingBox(), bitmap);
     }
     private static Bitmap drawBoundingBox(Rect bounds, Bitmap bitmap) {
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
-        paint.setColor(Color.GREEN);
+        paint.setColor(Color.BLUE);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(5);
 
         assert bounds != null;
         canvas.drawRect(bounds, paint);
 
+        String faceCoordinates = "X: " + bounds.left + ", Y: " + bounds.top + "\n Name: Tolya";
+        paint.setTextSize(50);
+        paint.setColor(Color.GREEN);
+        canvas.drawText(faceCoordinates, bounds.left, bounds.top - 20, paint);
+
         return bitmap;
-        //preview.setImageBitmap(bitmap);
     }
 }
