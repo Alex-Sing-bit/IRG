@@ -27,6 +27,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.irg0.helpers.DetectionResult;
 import com.example.irg0.helpers.DrawDetection;
 import com.example.irg0.helpers.Person;
 import com.example.irg0.helpers.PersonBase;
@@ -46,6 +47,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -53,18 +56,22 @@ public class MainActivity extends AppCompatActivity {
     private final int PERMISSION_CODE = 10;
     private final String[] PERMISSION = new String[]{Manifest.permission.CAMERA};
     private ImageView preview;
+
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private @SuppressLint("RestrictedApi") ImageAnalysis imageAnalysis;
+    private CameraSelector cameraSelector;
+
     private final YUVtoRGB translator = new YUVtoRGB();
+
     private BarcodeScanner barcodeDetector;
-    private String barcodeMessage = "";
-
     private FaceDetector faceDetector;
+    DetectionResult detectionResult = new DetectionResult();
 
-    Face mainFace = null;
-
-    private  final int UPDATE_RATE = 10;
+    private  final int UPDATE_RATE = 5;
 
     public static PersonBase base = new PersonBase();
+
+
 
     private boolean allPermissionGranted() {
         return Arrays.stream(PERMISSION)
@@ -95,6 +102,15 @@ public class MainActivity extends AppCompatActivity {
         faceDetector = FaceDetection.getClient(fOptions);
 
         preview = findViewById(R.id.preview);
+
+        imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(4600, 4600))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+
+        cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build();
 
         if (allPermissionGranted()) {
             startCamera();
@@ -137,70 +153,59 @@ public class MainActivity extends AppCompatActivity {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
 
-                @SuppressLint("RestrictedApi") ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setTargetResolution(new Size(4600, 4600))
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
-
-                CameraSelector cameraSelector = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build();
-
                 imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(MainActivity.this), image -> {
-
-
                         @OptIn(markerClass = ExperimentalGetImage.class) Image img = image.getImage();
                         Bitmap bitmap = translator.translateYUV(img, MainActivity.this);
                         InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
 
-
-                        if (Objects.equals(barcodeMessage, "") && frameCount % UPDATE_RATE == 0) {
+                        if (Objects.equals(detectionResult.getBarcodeMessage(), " ") && detectionResult.getMainFace() != null) {
                             barcodeDetector.process(inputImage)
                                     .addOnSuccessListener(barcodes -> barcodes.stream()
                                             .findFirst()
                                             .ifPresent(barcode -> {
-                                                preview.setImageBitmap(drawBoundingBox(barcode, bitmap));
-                                                preview.setRotation(image.getImageInfo().getRotationDegrees());
-                                                image.close();
-                                                barcodeMessage = barcode.getRawValue();
+                                                detectionResult.setBarcodeMessage(barcode.getRawValue());
                                             })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
                         } else if (frameCount % UPDATE_RATE == 0) {
                             barcodeDetector.process(inputImage)
                                     .addOnSuccessListener(barcodes -> {
                                         if (barcodes.isEmpty()) {
-                                            barcodeMessage = "";
+                                            detectionResult.setBarcodeMessage(" ");
                                         }
                                     }).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
                         }
-                        Toast.makeText(MainActivity.this, barcodeMessage, Toast.LENGTH_SHORT).show();
 
-                        if (frameCount % UPDATE_RATE == 0) {
+                        if (detectionResult.getMainFace() == null) {
                             faceDetector.process(inputImage)
                                     .addOnSuccessListener(faces -> {
                                         if (faces.isEmpty()) {
-                                            mainFace = null;
-                                            barcodeMessage = "";
+                                            detectionResult.setMainFace(null);
+                                            detectionResult.setBarcodeMessage(" ");
                                         } else {
                                             Face largestFace = faces.stream()
-                                                    .max(Comparator.comparingInt(face -> face.getBoundingBox().width() * face.getBoundingBox().height()))
+                                                    .max(Comparator.comparingInt(face ->
+                                                            face.getBoundingBox().width() * face.getBoundingBox().height()))
                                                     .orElse(null);
-                                            Toast.makeText(MainActivity.this, "САМОЕ КРУПНОЕ ЛИЦО", Toast.LENGTH_SHORT).show();
-                                            mainFace = largestFace;
+                                            //Toast.makeText(MainActivity.this, "САМОЕ КРУПНОЕ ЛИЦО", Toast.LENGTH_SHORT).show();
+
+                                            detectionResult.setMainFace(largestFace);
                                         }
                                     }).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
-
+                        } else if (frameCount % UPDATE_RATE == 0) {
+                            faceDetector.process(inputImage)
+                                    .addOnSuccessListener(faces -> {
+                                        if (faces.isEmpty()) {
+                                            detectionResult.setMainFace(null);
+                                            detectionResult.setBarcodeMessage(" ");
+                                        }
+                                    }).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
                         }
 
-                        if (mainFace != null) {
-                            preview.setImageBitmap(DrawDetection.drawDetection(bitmap, barcodeMessage, mainFace.getBoundingBox()));
-                            preview.setRotation(image.getImageInfo().getRotationDegrees());
-                            image.close();
-                        }
-
-                    preview.setRotation(image.getImageInfo().getRotationDegrees());
-                    preview.setImageBitmap(bitmap);
-                    image.close();
-                    frameCount++;
+                        preview.setRotation(image.getImageInfo().getRotationDegrees());
+                        preview.setImageBitmap(DrawDetection.drawDetection(bitmap,
+                            detectionResult.getBarcodeMessage(),
+                            detectionResult.getMainFace()));
+                        image.close();
+                        frameCount++;
                 });
 
                 cameraProvider.bindToLifecycle(MainActivity.this, cameraSelector, imageAnalysis);

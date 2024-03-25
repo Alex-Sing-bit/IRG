@@ -7,11 +7,15 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 
 import com.example.irg0.MainActivity;
+import com.google.mlkit.vision.face.Face;
 
 public class DrawDetection {
     static int COLOR = Color.BLUE;
 
-    public static Bitmap drawDetection(Bitmap bitmap, String id, Rect faceBounds) {
+    public static Bitmap drawDetection(Bitmap bitmap, String id, Face face) {
+        if (face == null) {
+            return bitmap;
+        }
         int intID = -1;
         try {
             intID = Integer.parseInt(id);
@@ -19,9 +23,9 @@ public class DrawDetection {
 
         }
 
-        return drawDetection(bitmap, intID, faceBounds);
+        return drawDetection(bitmap, intID, face.getBoundingBox());
     }
-    public static Bitmap drawDetection(Bitmap bitmap, int id, Rect faceBounds) {
+    private static Bitmap drawDetection(Bitmap bitmap, int id, Rect faceBounds) {
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setColor(COLOR);
