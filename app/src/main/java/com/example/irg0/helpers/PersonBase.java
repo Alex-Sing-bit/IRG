@@ -9,8 +9,10 @@ public class PersonBase {
     public PersonBase() {
 
     }
-    public void addToBase(Person person) {
-        base.put(person.getId(), person);
+    public int addToBase(Person person) {
+        int id = person.getId();
+        base.put(id, person);
+        return id;
     }
 
     public Person getPerson(Integer id) {

@@ -37,13 +37,17 @@ public class DrawDetection {
 
         paint.setTextSize(50);
         paint.setColor(COLOR);
-        String name;
+        Person p = null;
         if (id > 0) {
-            name = MainActivity.base.getPerson(id).getName();
-        } else {
-            name = "Неизвестная персона";
+            p = MainActivity.base.getPerson(id);
         }
-        canvas.drawText(name, faceBounds.right + 10, faceBounds.top + 20, paint);
+
+        canvas.drawText((p == null ? "Неизвестная персона" : p.getName()),
+                faceBounds.right + 10, faceBounds.top + 20, paint);
+        canvas.drawText((p == null ? "" : p.getBirthday().toString()),
+                faceBounds.right + 10, faceBounds.top + 80, paint);
+        canvas.drawText((p == null ? "" : p.getInfo()),
+                faceBounds.right + 10, faceBounds.top + 160, paint);
 
         return bitmap;
     }
