@@ -7,11 +7,32 @@
     android:id="@+id/main"
     tools:context=".MainActivity">
 
+    <EditText
+        android:id="@+id/idEditText"
+        android:layout_width="190dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="40dp"
+        android:inputType="phone"
+        android:hint="Phone num: +7-000-000-00-00"/>
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_toRightOf="@id/idEditText"
+        android:layout_marginTop="40dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="20dp"
+        android:text="change number"
+        android:onClick="onChangeNumber"/>
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="140dp"
+        android:layout_marginBottom="160dp"
+        android:layout_below="@id/idEditText"
         android:scaleType="centerInside" />
 
     <Button
@@ -19,7 +40,7 @@
         android:layout_width="wrap_content"
         android:layout_height="80dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="60dp"
         android:layout_marginStart="40dp"
         android:text="to IR"
         android:onClick="onIR"/>
@@ -29,7 +50,7 @@
         android:layout_width="wrap_content"
         android:layout_height="80dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="60dp"
         android:layout_marginStart="60dp"
         android:layout_toEndOf="@+id/button2"
         android:text="to friends list"

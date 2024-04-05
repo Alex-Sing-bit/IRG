@@ -9,10 +9,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.irg0.helpers.DetectionResult;
 import com.example.irg0.helpers.Person;
 import com.example.irg0.helpers.PersonBase;
 import com.google.gson.Gson;
@@ -20,9 +22,14 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
 
+import java.util.Objects;
+
 
 public class MainActivity extends AppCompatActivity {
     public static PersonBase base;
+    private Bitmap userQR = null;
+    private EditText idEditText;
+    private ImageView imageView;
 
     public void onIR(View view) {
         Intent intent = new Intent(this, IRActivity.class);
@@ -38,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
 
         SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         Gson gson = new Gson();
@@ -47,15 +56,14 @@ public class MainActivity extends AppCompatActivity {
             base = new PersonBase();
         }
 
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
-
-        ImageView imageView = findViewById(R.id.imageView);
-        String number = "+7-999-999-99-99";
-        Bitmap bitmap = bitMatrixToBitmap(makeQR(number));
-        if (bitmap != null) {
-            imageView.setImageBitmap(bitmap);
+        imageView = findViewById(R.id.imageView);
+        idEditText = findViewById(R.id.idEditText);
+        json = sharedPreferences.getString("number", "");
+        number = gson.fromJson(json, String.class);
+        if (number != null && !Objects.equals(number, " ")) {
+           idEditText.setText(number);
         }
+        onChangeNumber(imageView);
     }
 
     @Override
@@ -64,8 +72,13 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         Gson gson = new Gson();
+
         String json = gson.toJson(base);
         editor.putString("personBase", json);
+
+        json = gson.toJson(number);
+        editor.putString("number", json);
+
         editor.apply();
     }
     @Override
@@ -73,10 +86,22 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    private String number = " ";
+    public void onChangeNumber(View view) {
+        String s = idEditText.getText().toString();
+        if (Person.isPhoneNumber(s)) {
+            number = s;
+        } else {
+            Toast.makeText(this, "Введите номер телефона в формате +7-000-000-00-00",
+                    Toast.LENGTH_LONG).show();
+        }
+        userQR = bitMatrixToBitmap(makeQR(number));
+        imageView.setImageBitmap(userQR);
+    }
     private BitMatrix makeQR(String text) {
         try {
-            BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 1000, 1000);
-            return matrix;
+            BitMatrix b = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 1000, 1000);
+            return b;
         } catch (Exception ignored) {
             return null;
         }
