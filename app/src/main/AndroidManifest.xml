@@ -18,16 +18,19 @@
         tools:targetApi="31">
         <activity
             android:name=".AddFriendActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".QRScanActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".IRActivity"
             android:exported="false"
             android:label="@string/title_activity_iractivity"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/Theme.IRG0" />
+            android:theme="@style/Theme.IRG0"
+            android:screenOrientation="landscape"/>
 
         <meta-data
             android:name="android.support.PARENT_ACTIVITY"
@@ -35,10 +38,10 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -46,6 +49,7 @@
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode, faces" />
+        <meta-data android:name="com.google.zxing.client.android.SCAN.SCAN_MODE" android:value="QR_CODE_MODE" />
     </application>
 
 </manifest>

@@ -7,13 +7,20 @@
     android:id="@+id/main"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="140dp"
+        android:scaleType="centerInside" />
+
     <Button
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="80dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="40dp"
-        android:layout_centerHorizontal="true"
+        android:layout_marginStart="40dp"
         android:text="to IR"
         android:onClick="onIR"/>
 
@@ -23,6 +30,7 @@
         android:layout_height="80dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="40dp"
+        android:layout_marginStart="60dp"
         android:layout_toEndOf="@+id/button2"
         android:text="to friends list"
         android:onClick="onFriendList"/>

@@ -69,8 +69,7 @@ public class IRActivity extends AppCompatActivity {
     private  final int UPDATE_RATE = 5;
 
     public void onReturn(View view) {
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+        finish();
     }
 
     private boolean allPermissionGranted() {
@@ -79,7 +78,6 @@ public class IRActivity extends AppCompatActivity {
                         == PackageManager.PERMISSION_GRANTED);
     }
 
-    //НЕ РАБОТАЕТ ОТСЛЕЖИВАНИЕ
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
