@@ -26,6 +26,9 @@ import com.example.irg0.R;
 import com.example.irg0.helpers.Person;
 import com.example.irg0.helpers.PersonBase;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 public class AddFriendActivity extends AppCompatActivity {
     private Person addPerson = new Person();
     private EditText idEditText;
@@ -84,6 +87,24 @@ public class AddFriendActivity extends AppCompatActivity {
         ageEditText = findViewById(R.id.ageEditText);
         nameEditText = findViewById(R.id.nameEditText);
         infoEditText = findViewById(R.id.infoEditText);
+
+        String receivedString = getIntent().getStringExtra("ID");
+        if (receivedString != null) {
+            Toast.makeText(this, "Измените необходимые параметры",
+                    Toast.LENGTH_LONG).show();
+            Person p = MainActivity.base.getPerson(Integer.parseInt(receivedString));
+            idEditText.setText(p.getPhoneNumber());
+            LocalDate birthday = p.getBirthday();
+            if (birthday != null) {
+                ageEditText.setText(birthday.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+            }
+            nameEditText.setText(p.getName());
+            String info = p.getInfo();
+            if (!info.matches("\\s")) {
+                infoEditText.setText(info);
+            }
+        }
+
         Button selectDateButton = findViewById(R.id.selectDateButton);
         selectDateButton.setOnClickListener(v -> showDatePickerDialog(AddFriendActivity.this));
     }

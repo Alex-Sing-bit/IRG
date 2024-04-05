@@ -14,7 +14,6 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.irg0.helpers.DetectionResult;
 import com.example.irg0.helpers.Person;
 import com.example.irg0.helpers.PersonBase;
 import com.google.gson.Gson;
@@ -36,8 +35,13 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void onFriendList(View view) {
+    public void onAddFriend(View view) {
         Intent intent = new Intent(this, AddFriendActivity.class);
+        startActivity(intent);
+    }
+
+    public void onFriendsList(View view) {
+        Intent intent = new Intent(this, FriendsListActivity.class);
         startActivity(intent);
     }
 
@@ -123,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
 
         return bitmap;
     }
+
+
 }
 
 //Сохранение базы на устройстве
