@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         if (Person.isPhoneNumber(s)) {
             number = s;
         } else {
-            Toast.makeText(this, "Введите номер телефона в формате +7-000-000-00-00",
+            Toast.makeText(this, "Put number in the format +7-000-000-00-00",
                     Toast.LENGTH_LONG).show();
         }
         userQR = bitMatrixToBitmap(makeQR(number));

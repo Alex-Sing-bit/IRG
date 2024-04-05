@@ -30,29 +30,41 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="160dp"
+        android:layout_height="440dp"
         android:layout_below="@id/idEditText"
         android:scaleType="centerInside" />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_below="@id/imageView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="30dp"
+        android:text="Your ID. Share with friend">
+    </TextView>
 
     <Button
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
         android:layout_marginBottom="60dp"
         android:layout_marginStart="20dp"
+        android:layout_below="@id/text"
         android:text="to IR"
         android:onClick="onIR"/>
+
+
 
     <Button
         android:id="@+id/button3"
         android:layout_width="wrap_content"
         android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
         android:layout_marginBottom="60dp"
         android:layout_marginStart="20dp"
         android:layout_toEndOf="@+id/button2"
+        android:layout_below="@id/text"
         android:text="add Friend"
         android:onClick="onAddFriend"/>
 
@@ -60,10 +72,10 @@
         android:id="@+id/button4"
         android:layout_width="wrap_content"
         android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
         android:layout_marginBottom="60dp"
         android:layout_marginStart="20dp"
         android:layout_toEndOf="@+id/button3"
+        android:layout_below="@id/text"
         android:text="friends List"
         android:onClick="onFriendsList"/>
 </RelativeLayout>

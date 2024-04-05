@@ -32,6 +32,15 @@ public class PersonBase {
         return list;
     }
 
+    public boolean delete(int key) {
+        if (base.get(key) != null) {
+            base.remove(key);
+            return true;
+        }
+
+        return false;
+    }
+
     public List<String> toStringList() {
         List<String> list = new ArrayList<>();
         Integer[] keys = base.keySet().toArray(new Integer[base.size()]);

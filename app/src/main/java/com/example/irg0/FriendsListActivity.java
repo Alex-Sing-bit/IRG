@@ -22,8 +22,14 @@ public class FriendsListActivity extends AppCompatActivity
         implements MyAdapter.OnItemClickListener {
 
     private RecyclerView recyclerView;
+    List<String> namesList = MainActivity.base.toStringList();
     public void onReturn(View view) {
         finish();
+    }
+
+    public void onAddFriend(View view) {
+        Intent intent = new Intent(this, AddFriendActivity.class);
+        startActivity(intent);
     }
     @SuppressLint("MissingInflatedId")
     @Override
@@ -37,12 +43,21 @@ public class FriendsListActivity extends AppCompatActivity
             return insets;
         });
 
-        List<String> namesList = MainActivity.base.toStringList();
         recyclerView = findViewById(R.id.recyclerView);
+        recyclerUpdate();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        recyclerUpdate();
+    }
+
+    public void recyclerUpdate() {
+        namesList = MainActivity.base.toStringList();
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         MyAdapter adapter = new MyAdapter(namesList, this);
         recyclerView.setAdapter(adapter);
-
     }
 
     @Override
@@ -50,5 +65,6 @@ public class FriendsListActivity extends AppCompatActivity
         Intent intent = new Intent(FriendsListActivity.this, AddFriendActivity.class);
         intent.putExtra("ID", name);
         startActivity(intent);
+        recyclerUpdate();
     }
 }

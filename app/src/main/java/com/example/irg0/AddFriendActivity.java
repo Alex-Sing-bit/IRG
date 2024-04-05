@@ -1,6 +1,7 @@
 package com.example.irg0;
 
 import static com.example.irg0.helpers.Person.isPhoneNumber;
+import static com.example.irg0.helpers.Person.phoneNumberPattern;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -74,6 +75,8 @@ public class AddFriendActivity extends AppCompatActivity {
             addPerson = new Person();
             Toast.makeText(this, "Added", Toast.LENGTH_SHORT).show();
         }
+
+        clearEditTexts();
     }
 
     @SuppressLint("MissingInflatedId")
@@ -90,9 +93,10 @@ public class AddFriendActivity extends AppCompatActivity {
 
         String receivedString = getIntent().getStringExtra("ID");
         if (receivedString != null) {
-            Toast.makeText(this, "Измените необходимые параметры",
-                    Toast.LENGTH_LONG).show();
             Person p = MainActivity.base.getPerson(Integer.parseInt(receivedString));
+            if (p == null) {
+                return;
+            }
             idEditText.setText(p.getPhoneNumber());
             LocalDate birthday = p.getBirthday();
             if (birthday != null) {
@@ -115,11 +119,31 @@ public class AddFriendActivity extends AppCompatActivity {
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        DatePickerDialog datePickerDialog = new DatePickerDialog(context,
+        @SuppressLint("SetTextI18n") DatePickerDialog datePickerDialog = new DatePickerDialog(context,
                 (view, year1, month1, dayOfMonth) -> {
                     ageEditText.setText(dayOfMonth + "/" + (month1 + 1) + "/" + year1);
                 }, year, month, day);
 
         datePickerDialog.show();
+    }
+
+    public void onDelete(View view) {
+        String number = idEditText.getText().toString();
+        int hash = Person.makeId(number);
+        if (MainActivity.base.delete(hash)) {
+            clearEditTexts();
+            Toast.makeText(this, "Deleted", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Unknown number", Toast.LENGTH_LONG).show();
+        }
+
+
+    }
+
+    public void clearEditTexts() {
+        idEditText.getText().clear();
+        nameEditText.getText().clear();
+        ageEditText.getText().clear();
+        infoEditText.getText().clear();
     }
 }
