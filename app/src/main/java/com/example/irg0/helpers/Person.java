@@ -1,27 +1,25 @@
 package com.example.irg0.helpers;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Dictionary;
 
 public class Person {
 
-    private int id;
-    private String name;
-    private LocalDate birthday;
-    private String info;
+    public static final String phoneNumberPattern =
+            "^\\+7-[0-9]{3}-[0-9]{3}-[0-9]{2}-[0-9]{2}$";
+    private int id = -1;
+    private String name = null;
 
-    public Person(int id, String name, LocalDate birthday, String info) {
-        this.id = id;
-        this.birthday = birthday;
-        this.name = name;
-        this.info = info;
-        setId();
+    private String phoneNumber = null;
+    private LocalDate birthday = null;
+    private String info = " ";
+
+    public Person() {
     }
 
-    public Person(String id, String name, String birthday, String info) {
-        this.id = Integer.parseInt(id);
+    public Person(String number, String name, String birthday, String info) {
+        setId(number);
         this.birthday = dateFromString(birthday);
+        setPhoneNumber(number);
         this.name = name;
         this.info = info;
     }
@@ -48,9 +46,21 @@ public class Person {
         return info;
     }
 
-    private void setId() {
-        String s = name + info + birthday.toString();
-        this.id = s.hashCode();
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    public LocalDate getBirthday() {
+        return birthday;
+    }
+
+    public void setId(String number) {
+        if (isPhoneNumber(number)) {
+            this.id = makeId(number);
+        }
+    }
+
+    public static int makeId(String s) {
+        return s.hashCode();
     }
 
     public void setName(String name) {
@@ -61,11 +71,25 @@ public class Person {
         this.info = info;
     }
 
-    public void setBirthday(LocalDate birthday) {
-        this.birthday = birthday;
+    public void setBirthday(String birthday) {
+        try {
+            this.birthday = dateFromString(birthday);
+        } catch (Exception ignored) {
+
+        }
+
     }
 
-    public LocalDate getBirthday() {
-        return birthday;
+    public void setPhoneNumber(String phoneNumber) {
+        if (isPhoneNumber(phoneNumber)) {
+            this.phoneNumber = phoneNumber;
+        }
+    }
+
+    public static boolean isPhoneNumber(String barcode) {
+        if (barcode == null) {
+            return false;
+        }
+        return barcode.matches(phoneNumberPattern);
     }
 }

@@ -1,5 +1,7 @@
 package com.example.irg0;
 
+import static com.example.irg0.helpers.Person.isPhoneNumber;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -67,7 +69,6 @@ public class IRActivity extends AppCompatActivity {
     private  final int UPDATE_RATE = 5;
 
     public void onReturn(View view) {
-        Toast.makeText(this, "IRG ->", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -163,7 +164,11 @@ public class IRActivity extends AppCompatActivity {
                                 .addOnSuccessListener(barcodes -> barcodes.stream()
                                         .findFirst()
                                         .ifPresent(barcode -> {
-                                            detectionResult.setBarcodeMessage(barcode.getRawValue());
+                                            String s = barcode.getRawValue();
+                                            if (isPhoneNumber(s)) {
+                                                Toast.makeText(this, "find", Toast.LENGTH_SHORT).show();
+                                                detectionResult.setBarcodeMessage(s);
+                                            }
                                         })).addOnFailureListener(e -> Log.e(TAG, "Error processing Image", e));
                     }
 
@@ -185,8 +190,8 @@ public class IRActivity extends AppCompatActivity {
 
                     preview.setRotation(image.getImageInfo().getRotationDegrees());
                     preview.setImageBitmap(DrawDetection.drawDetection(bitmap,
-                            detectionResult.getBarcodeMessage(),
-                            detectionResult.getMainFace()));
+                                detectionResult.getBarcodeMessage(),
+                                detectionResult.getMainFace()));
                     image.close();
                     frameCount++;
                 });
